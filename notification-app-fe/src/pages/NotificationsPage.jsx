@@ -1,105 +1,84 @@
-import { useState } from "react";
-import {
-  Alert,
-  Badge,
-  Box,
-  CircularProgress,
-  Divider,
-  Pagination,
-  Stack,
-  Typography,
-} from "@mui/material";
+import {useState} from "react";
+import {Alert,Badge,Box,CircularProgress,Divider,Pagination,Stack,Typography} from "@mui/material";
 import NotificationsIcon from "@mui/icons-material/Notifications";
+import {NotificationCard} from "../components/NotificationCard";
+import {NotificationFilter} from "../components/NotificationFilter";
+import {useNotifications} from "../hooks/useNotifications";
 
-import { NotificationCard } from "../components/NotificationCard";
-import { NotificationFilter } from "../components/NotificationFilter";
-import { useNotifications } from "../hooks/useNotifications";
+export function NotificationsPage(){
+const [filter,setFilter]=useState("All");
+const [page,setPage]=useState(1);
 
-export function NotificationsPage() {
-  const [filter, setFilter] = useState("All");
-  const [page, setPage] = useState(1);
+const {notifications,totalPages,loading,error}=useNotifications(filter,page);
 
-  const { notifications, totalPages, loading, error } = useNotifications();
+const unreadCount=notifications.filter((n)=>!n.read).length;
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+const handleFilterChange=(newFilter)=>{
+setFilter(newFilter);
+setPage(1);
+};
 
-  const handleFilterChange = (newFilter) => {
-    setFilter(newFilter);
-    setPage(1);
-  };
+const handlePageChange=(_,newPage)=>{
+setPage(newPage);
+};
 
-  const handlePageChange = (_, newPage) => {
-    setPage(newPage);
-  };
+return(
+<Box sx={{maxWidth:720,mx:"auto",px:2,py:4}}>
+<Stack direction="row" alignItems="center" spacing={1.5} mb={3}>
+<Badge badgeContent={unreadCount} color="primary" max={99}>
+<NotificationsIcon sx={{fontSize:28}}/>
+</Badge>
+<Typography variant="h5" fontWeight={700}>
+Notifications
+</Typography>
+</Stack>
 
-  const filteredNotifications =
-    filter === "All"
-      ? notifications
-      : notifications.filter((n) => n.type === filter);
+<Divider sx={{mb:3}}/>
 
-  const currentNotifications = filteredNotifications.slice(
-    (page - 1) * 10,
-    page * 10
-  );
+<Box sx={{mb:3}}>
+<NotificationFilter value={filter} onChange={handleFilterChange}/>
+</Box>
 
-  return (
-    <Box sx={{ maxWidth: 720, mx: "auto", px: 2, py: 4 }}>
-      <Stack direction="row" alignItems="center" spacing={1.5} mb={3}>
-        <Badge badgeContent={unreadCount} color="primary" max={99}>
-          <NotificationsIcon sx={{ fontSize: 28 }} />
-        </Badge>
+{loading&&(
+<Box display="flex" justifyContent="center" py={6}>
+<CircularProgress/>
+</Box>
+)}
 
-        <Typography variant="h5" fontWeight={700}>
-          Notifications
-        </Typography>
-      </Stack>
+{!loading&&error&&(
+<Alert severity="error">
+{error}
+</Alert>
+)}
 
-      <Divider sx={{ mb: 3 }} />
+{!loading&&!error&&notifications.length===0&&(
+<Alert severity="info">
+No notifications found
+</Alert>
+)}
 
-      <Box sx={{ mb: 3 }}>
-        <NotificationFilter value={filter} onChange={handleFilterChange} />
-      </Box>
+{!loading&&!error&&notifications.length>0&&(
+<Stack spacing={1.5}>
+{notifications.map((notification)=>(
+<NotificationCard
+key={notification.id}
+notification={notification}
+/>
+))}
+</Stack>
+)}
 
-      {loading && (
-        <Box display="flex" justifyContent="center" py={6}>
-          <CircularProgress />
-        </Box>
-      )}
-
-      {!loading && error && (
-        <Alert severity="error">
-          Failed to load notifications: {error}
-        </Alert>
-      )}
-
-      {!loading && !error && currentNotifications.length === 0 && (
-        <Alert severity="info">
-          No notifications found
-        </Alert>
-      )}
-
-      {!loading && !error && currentNotifications.length > 0 && (
-        <Stack spacing={1.5}>
-          {currentNotifications.map((notification) => (
-            <NotificationCard
-              key={notification.id}
-              notification={notification}
-            />
-          ))}
-        </Stack>
-      )}
-
-      {!loading && !error && totalPages > 1 && (
-        <Box display="flex" justifyContent="center" mt={4}>
-          <Pagination
-            count={totalPages}
-            page={page}
-            onChange={handlePageChange}
-            color="primary"
-            shape="rounded"
-          />
-        </Box>
-      )}
-    </Box>
-  );
+{!loading&&!error&&totalPages>1&&(
+<Box display="flex" justifyContent="center" mt={4}>
+<Pagination
+count={totalPages}
+page={page}
+onChange={handlePageChange}
+color="primary"
+shape="rounded"
+/>
+</Box>
+)}
+</Box>
+);
 }
